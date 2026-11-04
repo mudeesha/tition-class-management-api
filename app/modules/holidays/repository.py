@@ -34,3 +34,6 @@ class HolidayRepository(TenantScopedRepository[Holiday]):
         if exclude_id is not None:
             stmt = stmt.where(Holiday.id != exclude_id)
         return self.db.scalars(stmt.limit(1)).first() is not None
+
+    def between(self, date_from: dt.date, date_to: dt.date) -> list[Holiday]:
+        return self.find(Holiday.date >= date_from, Holiday.date <= date_to)

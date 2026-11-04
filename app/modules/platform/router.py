@@ -9,6 +9,7 @@ from app.modules.platform.schemas import (
     PlanCreate,
     PlanOut,
     PlanUpdate,
+    PlatformSummary,
     TenantCreate,
     TenantOut,
     TenantUpdate,
@@ -52,7 +53,13 @@ def create_tenant(data: TenantCreate, service: PlatformServiceDep):
 
 @router.get("/tenants/{tenant_id}", response_model=TenantOut)
 def get_tenant(tenant_id: int, service: PlatformServiceDep):
-    return service.get_tenant(tenant_id)
+    return service.tenant_out(tenant_id)
+
+
+@router.get("/summary", response_model=PlatformSummary)
+def summary(service: PlatformServiceDep):
+    """Institutes by status, monthly revenue from active ones, and active students overall."""
+    return service.summary()
 
 
 @router.patch("/tenants/{tenant_id}", response_model=TenantOut)

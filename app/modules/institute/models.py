@@ -1,7 +1,7 @@
 from decimal import Decimal
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, TimestampMixin, str_enum
@@ -42,3 +42,18 @@ class InstituteSettings(TimestampMixin, Base):
     tute_institute_share_percent: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), default=Decimal("0")
     )
+
+
+class Counter(Base):
+    """Running numbers per institute, e.g. key "student" for student codes.
+
+    Later phases add receipt numbers per branch ("receipt:GAL").
+    """
+
+    __tablename__ = "counters"
+
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True
+    )
+    key: Mapped[str] = mapped_column(String(50), primary_key=True)
+    last_value: Mapped[int] = mapped_column(Integer, default=0)

@@ -11,7 +11,15 @@ from app.modules.branches.models import Branch
 from app.modules.institute.models import InstituteSettings
 from app.modules.platform.models import Plan, PlanKind, Tenant, TenantStatus
 from app.modules.platform.repository import PlanRepository, TenantRepository
-from app.modules.platform.schemas import PlanCreate, PlanUpdate, TenantCreate, TenantUpdate
+from app.modules.platform.schemas import (
+    PlanCreate,
+    PlanUpdate,
+    PlatformSummary,
+    TenantCreate,
+    TenantOut,
+    TenantUpdate,
+    TenantUsage,
+)
 from app.modules.teachers.models import Teacher
 from app.modules.users.models import Membership, Role, User
 from app.modules.users.repository import PermissionRepository, UserRepository
@@ -95,10 +103,32 @@ class PlatformService:
 
     def list_tenants(self, page: PageParams, q: str | None, status: TenantStatus | None) -> Page:
         items, total = self.tenants.paginate(self.tenants.search(q, status), page.page, page.size)
-        return Page(items=items, total=total, page=page.page, size=page.size)
+        return Page(items=self._with_usage(items), total=total, page=page.page, size=page.size)
 
     def get_tenant(self, tenant_id: int) -> Tenant:
         return self.tenants.get_or_404(tenant_id)
+
+    def tenant_out(self, tenant_id: int) -> TenantOut:
+        return self._with_usage([self.get_tenant(tenant_id)])[0]
+
+    def summary(self) -> PlatformSummary:
+        data = self.tenants.summary()
+        counts = data["by_status"]
+        return PlatformSummary(
+            institutes=sum(counts.values()),
+            trial=counts.get(TenantStatus.TRIAL, 0),
+            active=counts.get(TenantStatus.ACTIVE, 0),
+            suspended=counts.get(TenantStatus.SUSPENDED, 0),
+            monthly_revenue=data["monthly_revenue"],
+            students=data["students"],
+        )
+
+    def _with_usage(self, tenants: list[Tenant]) -> list[TenantOut]:
+        usage = self.tenants.usage([t.id for t in tenants])
+        return [
+            TenantOut.model_validate(t).model_copy(update={"usage": TenantUsage(**usage[t.id])})
+            for t in tenants
+        ]
 
     def create_tenant(self, data: TenantCreate) -> Tenant:
         """Set up a new customer: institute, settings, built-in roles, first branch, owner.

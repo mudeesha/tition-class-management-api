@@ -23,7 +23,7 @@ from app.modules.users.models import User
 from app.modules.users.repository import UserRepository
 from app.modules.users.schemas import RoleRef
 from app.tenancy.context import TenantContext
-from app.tenancy.permissions import PERMISSION_CODES
+from app.tenancy.permissions import PERMISSION_CODES, PORTAL_CODES
 
 
 class AuthService:
@@ -83,7 +83,9 @@ class AuthService:
             role=RoleRef.model_validate(ctx.membership.role),
             is_owner=ctx.is_owner,
             all_branches=ctx.all_branches,
-            permissions=sorted(PERMISSION_CODES if ctx.is_owner else ctx.permissions),
+            permissions=sorted(
+                PERMISSION_CODES - PORTAL_CODES if ctx.is_owner else ctx.permissions
+            ),
             branches=[BranchRef.model_validate(b) for b in branches],
         )
 

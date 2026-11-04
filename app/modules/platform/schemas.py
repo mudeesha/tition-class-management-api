@@ -87,6 +87,15 @@ class TenantUpdate(UpdateSchema):
     address: str | None = Field(None, max_length=255)
 
 
+class TenantUsage(Schema):
+    """Active counts, to compare with the plan's limits."""
+
+    students: int
+    teachers: int
+    branches: int
+    users: int
+
+
 class TenantOut(Schema):
     id: int
     code: str
@@ -97,3 +106,13 @@ class TenantOut(Schema):
     address: str | None
     plan: PlanOut
     created_at: datetime
+    usage: TenantUsage | None = None
+
+
+class PlatformSummary(Schema):
+    institutes: int
+    trial: int
+    active: int
+    suspended: int
+    monthly_revenue: Money = Field(description="Plan prices of the active institutes")
+    students: int = Field(description="Active students in every institute")

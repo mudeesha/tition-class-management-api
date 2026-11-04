@@ -9,14 +9,26 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import app.models  # noqa: F401  (registers every model before the first query)
 from app.core.config import settings
 from app.core.exceptions import AppError
+from app.modules.attendance.router import router as attendance_router
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import halls_router
 from app.modules.branches.router import router as branches_router
+from app.modules.classes.router import router as classes_router
+from app.modules.classes.router import schedules_router, timetable_router
+from app.modules.exams.router import router as exams_router
 from app.modules.holidays.router import router as holidays_router
 from app.modules.institute.router import router as institute_router
+from app.modules.payments.router import cash_router
+from app.modules.payments.router import router as payments_router
 from app.modules.platform.router import router as platform_router
+from app.modules.portal.router import router as portal_router
+from app.modules.reports.router import router as reports_router
+from app.modules.settlements.router import router as settlements_router
+from app.modules.students.router import enrollments_router
+from app.modules.students.router import router as students_router
 from app.modules.subjects.router import router as subjects_router
 from app.modules.teachers.router import router as teachers_router
+from app.modules.tutes.router import router as tutes_router
 from app.modules.users.router import members_router, permissions_router, roles_router
 
 API_PREFIX = "/api/v1"
@@ -50,6 +62,19 @@ for router in (
     roles_router,
     members_router,
     teachers_router,
+    classes_router,
+    schedules_router,
+    timetable_router,
+    students_router,
+    enrollments_router,
+    payments_router,
+    cash_router,
+    attendance_router,
+    tutes_router,
+    exams_router,
+    portal_router,
+    settlements_router,
+    reports_router,
 ):
     app.include_router(router, prefix=API_PREFIX)
 

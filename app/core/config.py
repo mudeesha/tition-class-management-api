@@ -12,7 +12,14 @@ class Settings(BaseSettings):
     access_token_minutes: int = 30
     refresh_token_days: int = 14
 
-    cors_origins: list[str] = ["http://localhost:4200"]
+    cors_origins: list[str] = ["http://localhost:3000"]
+
+    # "Today" for class days, fees and door scans. Customers are in Sri Lanka.
+    timezone: str = "Asia/Colombo"
+
+    # Uploaded files (tute PDFs). Can move to cloud storage later behind app/core/storage.py.
+    storage_dir: str = "storage"
+    max_upload_mb: int = 20
 
 
 settings = Settings()

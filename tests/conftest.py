@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -81,3 +83,53 @@ def admin(client, db) -> Api:
     )
     db.commit()
     return login(client, "admin@platform.lk")
+
+
+@pytest.fixture
+def campus(db, client) -> SimpleNamespace:
+    """A multi-branch institute ready for classes: Galle and Kandy, halls, subjects, teachers.
+
+    Sunil teaches in both branches, Amara only in Galle.
+    """
+    tenant = make_tenant(db, "chain", plan_code="multi_branch")
+    owner = login(client, "owner@chain.lk", tenant_id=tenant.id)
+    gal = owner.post("/branches", {"name": "Galle", "code": "GAL"}).json()
+    kdy = owner.post("/branches", {"name": "Kandy", "code": "KDY"}).json()
+
+    def make(url, body):
+        res = owner.post(url, body)
+        assert res.status_code == 201, res.text
+        return res.json()
+
+    return SimpleNamespace(
+        tenant=tenant,
+        owner=owner,
+        gal=gal,
+        kdy=kdy,
+        hall_a=make("/halls", {"branch_id": gal["id"], "name": "Hall A"}),
+        hall_b=make("/halls", {"branch_id": gal["id"], "name": "Hall B"}),
+        kandy_hall=make("/halls", {"branch_id": kdy["id"], "name": "Main hall"}),
+        maths=make("/subjects", {"name": "Mathematics", "level": "ol"}),
+        physics=make("/subjects", {"name": "Physics", "level": "al"}),
+        sunil=make("/teachers", {"name": "Sunil", "branch_ids": [gal["id"], kdy["id"]]}),
+        amara=make("/teachers", {"name": "Amara", "branch_ids": [gal["id"]]}),
+    )
+
+
+@pytest.fixture
+def freeze(monkeypatch):
+    """`freeze(datetime(2027, 1, 10, 7, 45))` sets the app's clock (Sri Lanka time)."""
+    import datetime as dt
+
+    from app.core import clock
+
+    def set_time(moment: dt.datetime) -> None:
+        monkeypatch.setattr(clock, "now", lambda: moment.replace(tzinfo=clock._zone))
+
+    return set_time
+
+
+@pytest.fixture(autouse=True)
+def storage_dir(tmp_path, monkeypatch):
+    """Uploaded files go to a temporary folder."""
+    monkeypatch.setattr(settings, "storage_dir", str(tmp_path / "storage"))

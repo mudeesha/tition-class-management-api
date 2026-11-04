@@ -55,6 +55,28 @@ migrations/    Alembic
 tests/
 ```
 
+## Modules
+
+| Module | What it covers |
+| --- | --- |
+| `platform` | Plans, institutes (tenants), usage and revenue for the platform admin |
+| `auth` | Sign-in, refresh, password change, `/auth/me`, `/auth/context` |
+| `users` | Roles, permissions, staff accounts (members), branch access |
+| `institute` | Profile, fee settings, running numbers (student codes, receipt numbers) |
+| `branches`, `subjects`, `holidays`, `teachers` | Setup |
+| `classes` | Classes, weekly times with hall/teacher clash checks, timetable |
+| `students` | Students, QR cards, portal logins, enrollments, half/free cards, promotion |
+| `payments` | Dues, receipts, voids, cash handover; `fees.py` holds the fee rules |
+| `attendance` | Class days (from the weekly times, skipping holidays), door scan, marking |
+| `tutes` | Free/paid tutes, hard-copy ticks, PDF soft copies (access checked from payments) |
+| `exams` | Exams with parts, marks, ranks (worked out, not stored) |
+| `portal` | What a signed-in student sees about themselves |
+| `settlements` | Teacher shares per month, payouts, balances |
+| `reports` | Dashboard, fees owed, collections, attendance rates |
+
+"Today" uses `TIMEZONE` (default Asia/Colombo) through `app/core/clock.py`; tests freeze it with
+the `freeze` fixture. Uploaded files go to `STORAGE_DIR` through `app/core/storage.py`.
+
 ## Rules
 
 - **Router**: no logic and no queries. Check permission with `dependencies=[requires("x.y")]`,

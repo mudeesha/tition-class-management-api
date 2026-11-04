@@ -6,6 +6,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import Conflict, Forbidden
+from app.modules.attendance.models import ClassSession, SessionKind
+from app.modules.attendance.repository import SessionRepository
 from app.modules.branches.repository import BranchRepository
 from app.modules.holidays.models import Holiday
 from app.modules.holidays.repository import HolidayRepository
@@ -19,6 +21,7 @@ class HolidayService:
         self.ctx = ctx
         self.holidays = HolidayRepository(db, ctx)
         self.branches = BranchRepository(db, ctx)
+        self.days = SessionRepository(db, ctx)
 
     def list(
         self,
@@ -45,6 +48,7 @@ class HolidayService:
         if self.holidays.taken(data.date, data.branch_id):
             raise Conflict(f"There is already a holiday on {data.date}")
         holiday = self.holidays.add(Holiday(**data.model_dump()))
+        self._drop_class_days(holiday)
         self.db.commit()
         return holiday
 
@@ -60,6 +64,7 @@ class HolidayService:
             raise Conflict(f"There is already a holiday on {day}")
         for field, value in changes.items():
             setattr(holiday, field, value)
+        self._drop_class_days(holiday)
         self.db.commit()
         return holiday
 
@@ -68,6 +73,13 @@ class HolidayService:
         self._check_branch(holiday.branch_id)
         self.holidays.delete(holiday)
         self.db.commit()
+
+    def _drop_class_days(self, holiday: Holiday) -> None:
+        """No regular classes on a holiday. Days with attendance already marked stay."""
+        where = [ClassSession.date == holiday.date, ClassSession.kind == SessionKind.REGULAR]
+        if holiday.branch_id is not None:
+            where.append(ClassSession.branch_id == holiday.branch_id)
+        self.days.drop_unused(*where)
 
     def _check_branch(self, branch_id: int | None) -> None:
         """All-branch holidays need all-branch access; others need access to that branch."""

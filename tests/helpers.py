@@ -36,6 +36,9 @@ class Api:
     def patch(self, url: str, json=None, **kw):
         return self.client.patch(f"/api/v1{url}", json=json, headers=self.headers, **kw)
 
+    def put(self, url: str, json=None, **kw):
+        return self.client.put(f"/api/v1{url}", json=json, headers=self.headers, **kw)
+
     def delete(self, url: str, **kw):
         return self.client.delete(f"/api/v1{url}", headers=self.headers, **kw)
 
@@ -104,3 +107,46 @@ def add_member(
 
 def error_code(res) -> str:
     return res.json()["error"]["code"]
+
+
+def new_class(campus, **fields) -> dict:
+    """A Grade 10 maths class with Sunil in Galle, Hall A, unless `fields` say otherwise."""
+    body = {
+        "branch_id": campus.gal["id"],
+        "subject_id": campus.maths["id"],
+        "teacher_id": campus.sunil["id"],
+        "level": "grade_10",
+        "monthly_fee": "2000",
+        "hall_id": campus.hall_a["id"],
+        **fields,
+    }
+    res = campus.owner.post("/classes", body)
+    assert res.status_code == 201, res.text
+    return res.json()
+
+
+def new_student(api: Api, branch_id: int, name: str = "Kasun Perera", **fields) -> dict:
+    res = api.post("/students", {"name": name, "home_branch_id": branch_id, **fields})
+    assert res.status_code == 201, res.text
+    return res.json()
+
+
+def slot(weekday: int, start: str, end: str, **fields) -> dict:
+    return {"weekday": weekday, "start_time": start, "end_time": end, **fields}
+
+
+def future_month(months_ahead: int = 2):
+    """The first day of a month after today, so class days aren't "before the class existed"."""
+    from datetime import date
+
+    from app.common.schemas import add_months, month_of
+
+    return add_months(month_of(date.today()), months_ahead)
+
+
+def ym(day) -> str:
+    return day.strftime("%Y-%m")
+
+
+def enroll(api: Api, student: dict, cls: dict, **fields):
+    return api.post("/enrollments", {"student_id": student["id"], "class_id": cls["id"], **fields})

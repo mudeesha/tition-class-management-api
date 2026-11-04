@@ -1,4 +1,4 @@
-from app.tenancy.permissions import PERMISSION_CODES
+from app.tenancy.permissions import PERMISSION_CODES, PORTAL_CODES
 from tests.helpers import PASSWORD, Api, error_code, login
 
 
@@ -90,7 +90,8 @@ def test_owner_context_has_every_permission(owner):
     body = owner.get("/auth/context").json()
     assert body["is_owner"] is True
     assert body["all_branches"] is True
-    assert set(body["permissions"]) == PERMISSION_CODES
+    # Every staff permission; the portal ones are for a student's own records.
+    assert set(body["permissions"]) == PERMISSION_CODES - PORTAL_CODES
     assert [b["code"] for b in body["branches"]] == ["MAIN"]
 
 
